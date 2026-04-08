@@ -165,17 +165,22 @@ def call_huggingface_model(prompt: str, model_id: str, system: Optional[str] = N
 
 
 def call_llm_with_fallback(prompt: str, system: Optional[str] = None) -> Tuple[str, str]:
+    print("🔁 Tentative avec Gemini...")
     res = call_gemini_api(prompt)
     if "FALLBACK" not in res and "ERREUR" not in res:
+        print("✅ Gemini OK")
         return res, "Gemini"
+    print("⚠️ Gemini échoue, passage à Qwen...")
     res = call_huggingface_model(prompt, "Qwen/Qwen2.5-7B-Instruct", system)
     if "FALLBACK" not in res and "ERREUR" not in res:
+        print("✅ Qwen OK")
         return res, "Qwen 2.5"
+    print("⚠️ Qwen échoue, passage à DeepSeek...")
     res = call_huggingface_model(prompt, "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B", system)
     if "FALLBACK" not in res and "ERREUR" not in res:
+        print("✅ DeepSeek OK")
         return res, "DeepSeek"
     return "ERREUR: Aucun modèle disponible", "Aucun"
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  NŒUDS LANGGRAPH (avec logs)
