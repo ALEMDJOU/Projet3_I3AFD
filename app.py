@@ -120,7 +120,7 @@ if run_button:
         st.warning("Veuillez saisir une URL ou un ID YouTube.")
     else:
         video_id  = extract_video_id(video_input)
-        app_graph = build_graph(keys["youtube"], keys["gemini"])
+        app_graph = build_graph(keys)
         config    = {"configurable": {"thread_id": "ava_pro_session"}}
 
         st.markdown(
