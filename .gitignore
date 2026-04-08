@@ -1,0 +1,66 @@
+# Fichiers d'environnement et clés API
+.env
+.env.local
+.env.*.local
+
+# Fichiers Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distributions / paquets
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Fichiers de logs et bases de données
+*.log
+*.sqlite
+*.db
+
+# Environnements virtuels
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Fichiers de configuration spécifiques
+config.local.py
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers de test et couverture
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Fichiers de votre projet (logs générés)
+logs/
+*.log
+
+# Idées de fichiers temporaires
+*.tmp
+*.bak

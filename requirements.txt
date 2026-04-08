@@ -1,0 +1,10 @@
+streamlit>=1.35
+plotly>=5.18
+requests>=2.31
+google-api-python-client>=2.120
+langgraph>=0.1
+python-dotenv>=1.0
+
+# Métriques HuggingFace (ablation study)
+evaluate>=0.4
+bert-score>=0.3
