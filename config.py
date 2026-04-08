@@ -1,21 +1,34 @@
 """
-config.py — Chargement des variables d'environnement et injection du style global.
+config.py — Chargement des secrets (st.secrets ou .env) et injection du style global.
 """
 import os
 import streamlit as st
 from dotenv import load_dotenv
 
-load_dotenv()  # Charge .env si présent, sinon utilise les variables système
-
 
 def get_api_keys() -> dict:
     """
-    Retourne les clés API depuis l'environnement.
-    Priorité : .env > variables système > saisie utilisateur (fallback sidebar).
+    Retourne les clés API.
+    Priorité :
+        1. st.secrets (Streamlit Cloud)
+        2. fichier .env (développement local)
     """
+    try:
+        # En environnement Streamlit Cloud, st.secrets est disponible
+        youtube_key = st.secrets["YOUTUBE_API_KEY"]
+        gemini_key = st.secrets["GEMINI_API_KEY"]
+        hf_key = st.secrets["HUGGINGFACE_API_KEY"]
+    except (AttributeError, KeyError):
+        # Fallback local : lecture depuis .env
+        load_dotenv()
+        youtube_key = os.getenv("YOUTUBE_API_KEY", "")
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        hf_key = os.getenv("HUGGINGFACE_API_KEY", "")
+
     return {
-        "youtube": os.getenv("YOUTUBE_API_KEY", ""),
-        "gemini":  os.getenv("GEMINI_API_KEY", ""),
+        "youtube": youtube_key,
+        "gemini": gemini_key,
+        "huggingface": hf_key,
     }
 
 

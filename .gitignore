@@ -64,3 +64,4 @@ logs/
 # Idées de fichiers temporaires
 *.tmp
 *.bak
+.streamlit/
