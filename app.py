@@ -17,6 +17,62 @@ from metrics import render_ablation
 setup_page()
 keys = get_api_keys()
 
+UI_STRINGS = {
+    "fr": {
+        "dashboard_title": "Tableau de Bord AVA PRO",
+        "dashboard_subtitle": "Analyse sémantique par swarm multi-agents · LangGraph + Gemini + HuggingFace Metrics",
+        "analyze_title": "Analyser une vidéo",
+        "url_placeholder": "URL ou ID YouTube",
+        "btn_run": "🚀 LANCER L'ANALYSE",
+        "btn_stop": "🛑 ARRÊTER L'ANALYSE",
+        "exec_trace": " Suivi de l'Exécution",
+        "logs": "LOGS",
+        "success": "✅ Analyse terminée.",
+        "results_title": " Résultats de l'Analyse",
+        "gauge_title": "QUALITÉ GLOBALE",
+        "timeline_title": "ÉVOLUTION DU SENTIMENT",
+        "meta_source": "SOURCE",
+        "analyst_name": "AVA Analyst",
+        "analyst_badge": "Expert Swarm",
+        "tabs": ["Bruts", "Filtrés", "Analyse"],
+        "step_names": {
+            "fetch": "Fetcher",
+            "filter": "Filter",
+            "analyst": "Analyst",
+            "synthesizer": "Synthesizer"
+        },
+        "team_title": "L'Équipe de Développement AVA PRO",
+        
+    },
+    
+    "en": {
+        "dashboard_title": "AVA PRO Dashboard",
+        "dashboard_subtitle": "Multi-agent swarm semantic analysis · LangGraph + Gemini + HuggingFace Metrics",
+        "analyze_title": "Analyze a Video",
+        "url_placeholder": "YouTube URL or ID",
+        "btn_run": "🚀 START ANALYSIS",
+        "btn_stop": "🛑 STOP ANALYSIS",
+        "exec_trace": " Execution Tracking",
+        "logs": "LOGS",
+        "success": "✅ Analysis finished.",
+        "results_title": " Analysis Results",
+        "gauge_title": "GLOBAL QUALITY",
+        "timeline_title": "SENTIMENT EVOLUTION",
+        "meta_source": "SOURCE",
+        "analyst_name": "AVA Analyst",
+        "analyst_badge": "Swarm Expert",
+        "tabs": ["Raw", "Filtered", "Analysis"],
+        "step_names": {
+            "fetch": "Fetcher",
+            "filter": "Filter",
+            "analyst": "Analyst",
+            "synthesizer": "Synthesizer"
+        },
+        "team_title": "AVA PRO Development Team",
+        
+    }
+}
+
 # ──────────────────────────────────────────────
 # Sidebar
 # ──────────────────────────────────────────────
@@ -31,6 +87,13 @@ with st.sidebar:
     st.markdown("<p style='text-align:center;color:#64748B;font-size:0.9rem;"
                 "margin-top:-10px;'>Agentic Video Analysis v3.0</p>",
                 unsafe_allow_html=True)
+    st.markdown("---")
+    lang = st.selectbox(
+        "🌐 Language / Langue",
+        options=["fr", "en"],
+        format_func=lambda x: "Français" if x == "fr" else "English"
+    )
+    t = UI_STRINGS[lang]
     st.markdown("---")
     st.markdown("<h3 style='font-size:1.1rem;'>"
                 "<i class='fa-solid fa-layer-group'></i> ARCHITECTURE</h3>",
@@ -84,9 +147,9 @@ with st.sidebar:
 
 st.markdown(
     '<div class="main-header">'
-    '<h1 style="margin:0;font-size:2.5rem;font-weight:800;">Tableau de Bord AVA PRO</h1>'
+    f'<h1 style="margin:0;font-size:2.5rem;font-weight:800;">{t["dashboard_title"]}</h1>'
     '<p style="margin:5px 0 0 0;opacity:0.9;font-size:1.1rem;">'
-    'Analyse sémantique par swarm multi-agents · LangGraph + Gemini + HuggingFace Metrics'
+    f'{t["dashboard_subtitle"]}'
     '</p></div>',
     unsafe_allow_html=True,
 )
@@ -96,18 +159,18 @@ st.markdown(
 # ──────────────────────────────────────────────
 
 st.markdown(
-    "<div class='section-title'><i class='fa-solid fa-link'></i> Analyser une vidéo</div>",
+    f"<div class='section-title'><i class='fa-solid fa-link'></i> {t['analyze_title']}</div>",
     unsafe_allow_html=True,
 )
 col_input, col_btn = st.columns([4, 1.2])
 with col_input:
     video_input = st.text_input(
-        "URL ou ID YouTube",
+        t["url_placeholder"],
         placeholder="https://www.youtube.com/watch?v=...",
         label_visibility="collapsed",
     )
 with col_btn:
-    run_button = st.button("🚀 LANCER L'ANALYSE", type="primary")
+    run_button = st.button(t["btn_run"], type="primary")
 
 # ──────────────────────────────────────────────
 # Exécution du pipeline
@@ -125,14 +188,14 @@ if run_button:
 
         st.markdown(
             "<div class='section-title'><i class='fa-solid fa-microchip'></i>"
-            " Suivi de l'Exécution</div>",
+            f"{t['exec_trace']}</div>",
             unsafe_allow_html=True,
         )
         col_exec, col_logs = st.columns([2, 1])
         with col_exec:
             tracker_box  = st.empty()
             progress_bar = st.progress(0)
-            if st.button("🛑 ARRÊTER L'ANALYSE", type="secondary", use_container_width=True):
+            if st.button(t["btn_stop"], type="secondary", use_container_width=True):
                 st.rerun()
         with col_logs:
             st.markdown("<h4 style='font-size:0.9rem;color:#64748B;'>LOGS</h4>",
@@ -140,15 +203,15 @@ if run_button:
             log_container = st.empty()
 
         steps_display = [
-            ("fetcher",     "Fetcher",     "fa-download"),
-            ("filter",      "Filter",      "fa-filter"),
-            ("analyst",     "Analyst",     "fa-brain"),
-            ("synthesizer", "Synthesizer", "fa-wand-magic-sparkles"),
+            ("fetch",       t["step_names"]["fetch"],       "fa-download"),
+            ("filter",      t["step_names"]["filter"],      "fa-filter"),
+            ("analyst",     t["step_names"]["analyst"],     "fa-brain"),
+            ("synthesizer", t["step_names"]["synthesizer"], "fa-wand-magic-sparkles"),
         ]
         completed = []
 
         with st.spinner("Activation du swarm…"):
-            for i, output in enumerate(app_graph.stream({"video_id": video_id}, config)):
+            for i, output in enumerate(app_graph.stream({"video_id": video_id, "language": lang}, config)):
                 active_node = list(output.keys())[0]
                 completed.append(active_node)
 
@@ -180,20 +243,21 @@ if run_button:
                 tracker_box.markdown(tracker_html, unsafe_allow_html=True)
                 progress_bar.progress(min((i + 1) / len(steps_display), 1.0))
 
-        st.success("✅ Analyse terminée.")
+        st.success(t["success"])
 
         # ──────────────────────────────────────────────
         # Affichage des résultats
         # ──────────────────────────────────────────────
 
         final_state = app_graph.get_state(config).values
-        info  = final_state.get("video_info", {"title": "N/A", "author": "N/A"})
+        v_title = final_state.get("video_title", "N/A")
+        v_author = final_state.get("video_channel", "N/A")
         score = final_state.get("final_score", 0)
 
         st.markdown("---")
         st.markdown(
             "<div class='section-title'><i class='fa-solid fa-chart-pie'></i>"
-            " Résultats de l'Analyse</div>",
+            f"{t['results_title']}</div>",
             unsafe_allow_html=True,
         )
 
@@ -203,7 +267,7 @@ if run_button:
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number", value=score,
                 domain={"x": [0, 1], "y": [0, 1]},
-                title={"text": "QUALITÉ GLOBALE", "font": {"size": 16, "color": "#018EA9"}},
+                title={"text": t["gauge_title"], "font": {"size": 16, "color": "#018EA9"}},
                 gauge={
                     "axis": {"range": [None, 10]},
                     "bar":  {"color": "#00D4AC"},
@@ -231,7 +295,7 @@ if run_button:
                     fill="tozeroy", fillcolor="rgba(0,212,172,0.1)",
                 ))
                 fig_timeline.update_layout(
-                    title={"text": "ÉVOLUTION DU SENTIMENT",
+                    title={"text": t["timeline_title"],
                            "font": {"size": 14, "color": "#018EA9"}},
                     height=230, margin=dict(l=0, r=0, t=50, b=0),
                     xaxis={"showgrid": False, "showticklabels": False},
@@ -244,17 +308,18 @@ if run_button:
             summary_text = (
                 final_state.get("summary", "")
                 .split("|")[-1]
-                .replace("RÉSUMÉ:", "")
+                .replace("RÉSUMÉ:", "").replace("SUMMARY:", "")
                 .strip()
             )
             # Carte Métadonnées
             st.markdown(
                 f'<div class="info-card">'
-                f'<h4 style="color:#64748B;margin:0;font-size:0.75rem;letter-spacing:1px;">SOURCE</h4>'
+                f'<h4 style="color:#64748B;margin:0;font-size:0.75rem;letter-spacing:1px;">'
+                f'{t["meta_source"]}</h4>'
                 f'<p style="font-weight:700;color:#1E293B;font-size:1.05rem;margin:5px 0;">'
-                f'{info["title"]}</p>'
+                f'{v_title}</p>'
                 f'<p style="color:#00D4AC;font-size:0.9rem;margin:0;">'
-                f'<i class="fa-solid fa-circle-user"></i> {info["author"]}</p>'
+                f'<i class="fa-solid fa-circle-user"></i> {v_author}</p>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -264,7 +329,8 @@ if run_button:
                 f'<div class="comment-box">'
                 f'  <div class="analyst-avatar"><i class="fa-solid fa-brain"></i></div>'
                 f'  <div class="comment-content">'
-                f'    <div class="comment-author">AVA Analyst <span class="author-badge">Expert Swarm</span></div>'
+                f'    <div class="comment-author">{t["analyst_name"]} '
+                f'<span class="author-badge">{t["analyst_badge"]}</span></div>'
                 f'    <div class="comment-text">"{summary_text}"</div>'
                 f'  </div>'
                 f'</div>',
@@ -272,7 +338,7 @@ if run_button:
             )
 
         # Tabs commentaires
-        tab1, tab2, tab3 = st.tabs(["Bruts", "Filtrés", "Analyse"])
+        tab1, tab2, tab3 = st.tabs(t["tabs"])
         with tab1:
             for c in final_state.get("raw_comments", [])[:10]:
                 st.markdown(
@@ -296,4 +362,76 @@ if run_button:
         # ──────────────────────────────────────────────
         # Ablation study (métriques HuggingFace)
         # ──────────────────────────────────────────────
-        render_ablation(final_state, None, keys["gemini"])
+        render_ablation(final_state, None, keys["gemini"], lang=lang)
+# ──────────────────────────────────────────────
+# Section Équipe de Développement (Footer)
+# ──────────────────────────────────────────────
+st.markdown("---")
+st.markdown(
+    f"<div class='section-title'><i class='fa-solid fa-users'></i> {t['team_title']}</div>",
+    unsafe_allow_html=True
+)
+
+# Chemins des images (à ajuster selon votre structure)
+image1 = "images/proje3.jpg"      # 3840x2160
+image2 = "images/projet.jpg"   
+image3 = "images/i3afd.jpg"     # 2160x3828
+
+# CSS pour un affichage élégant
+st.markdown("""
+<style>
+    /* Création d'un bloc unique pour l'équipe */
+    [data-testid="stHorizontalBlock"] {
+        gap: 0px !important;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid #E2E8F0;
+        background: white;
+    }
+    /* Ajustement des images pour qu'elles remplissent le bloc sans vide */
+    [data-testid="column"] img {
+        height: 280px !important; /* Hauteur fixe par défaut */
+        object-fit: cover !important;
+        width: 100% !important;
+        border-radius: 0px !important;
+        transition: all 0.3s ease !important;
+    }
+    [data-testid="column"] img:hover {
+        transform: scale(1.05);
+        z-index: 10;
+    }
+
+    /* Media queries pour la responsivité */
+    @media (max-width: 768px) { /* Pour les tablettes et plus petits */
+        [data-testid="column"] img {
+            height: 200px !important; /* Réduire la hauteur */
+        }
+    }
+    @media (max-width: 480px) { /* Pour les téléphones mobiles */
+        [data-testid="column"] img {
+            height: 150px !important; /* Réduire encore plus la hauteur */
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Affichage des deux images
+col1, col2, col3 = st.columns(3)
+with col1:
+    if os.path.exists(image1):
+        st.image(image1, use_container_width=True)
+    else:
+        st.warning(f"Image non trouvée : {image1}")
+with col2:
+    if os.path.exists(image2):
+        st.image(image2, use_container_width=True)
+    else:
+        st.warning(f"Image non trouvée : {image2}")
+with col3:
+    if os.path.exists(image3):
+        st.image(image3, use_container_width=True)
+    else:
+        st.warning(f"Image non trouvée : {image3}")        
+
+st.caption("✨ Projet 3 I3AFD – Analyse vidéo par swarm multi-agents")

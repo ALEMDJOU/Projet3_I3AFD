@@ -49,8 +49,9 @@ def run_monolithic_baseline(comments: list, call_api_fn, api_key: str) -> str:
 
 def _extract_summary_text(raw: str) -> str:
     """Extrait la partie textuelle après 'RÉSUMÉ:' pour ne comparer que le texte."""
-    if "RÉSUMÉ:" in raw:
-        return raw.split("RÉSUMÉ:")[-1].strip()
+    m = re.split(r"RÉSUMÉ:|SUMMARY:", raw, flags=re.IGNORECASE)
+    if len(m) > 1:
+        return m[-1].strip()
     return raw.strip()
 
 
@@ -105,7 +106,7 @@ def compute_ablation_metrics(
 # Rendu Streamlit de l'ablation
 # ──────────────────────────────────────────────
 
-def render_ablation(final_state: dict, call_api_fn, gemini_key: str):
+def render_ablation(final_state: dict, call_api_fn, gemini_key: str, lang: str = "fr"):
     """
     Affiche le rapport d'ablation complet dans un expander Streamlit.
     Appelle le baseline monolithique et calcule les métriques HuggingFace.
@@ -145,7 +146,7 @@ def render_ablation(final_state: dict, call_api_fn, gemini_key: str):
 
             with st.spinner("Calcul ROUGE-L et BERTScore (peut prendre 30–60 s)…"):
                 try:
-                    metrics = compute_ablation_metrics(multi_summary, mono_output)
+                    metrics = compute_ablation_metrics(multi_summary, mono_output, lang=lang)
 
                     m1, m2, m3, m4 = st.columns(4)
                     m1.metric("ROUGE-L  Multi-agents", f"{metrics['rouge_l_multi']:.3f}")

@@ -23,6 +23,7 @@ class AgentState(TypedDict):
     # Entrée utilisateur
     search_query: str
     video_id: Optional[str]
+    language: str
 
     # Métadonnées vidéo
     video_title: str
@@ -331,10 +332,21 @@ def node_analyst(state: AgentState) -> dict:
     likes = state.get("video_likes", "N/A")
     desc = state.get("video_description", "")[:1000]
 
-    system = "Tu es un expert en analyse de contenu vidéo. Réponds de manière structurée et précise."
+    lang = state.get("language", "fr")
+    lang_name = "French" if lang == "fr" else "English"
+    
+    if lang == "fr":
+        system = "Tu es un expert en analyse de contenu vidéo. Réponds de manière structurée et précise en français."
+        task_prompt = "TÂCHE (réponds section par section)"
+        sections = "1. SIMILARITÉ REQUÊTE/CONTENU [0-10]\n2. ANALYSE SENTIMENTALE\n3. VALIDATION PÉDAGOGIQUE\n4. THÈMES RÉCURRENTS\n5. SCORE D'UTILITÉ PERÇUE [0-10]\n6. CATÉGORISATION\n7. SIGNAUX d'ALERTE\n8. SCORE INSTRUCTIF [0-1]\n9. POLARITÉ GLOBALE [-1 à 1]"
+    else:
+        system = "You are an expert in video content analysis. Respond in a structured and precise manner in English."
+        task_prompt = "TASK (answer section by section)"
+        sections = "1. QUERY/CONTENT SIMILARITY [0-10]\n2. SENTIMENT ANALYSIS\n3. PEDAGOGICAL VALIDATION\n4. RECURRING THEMES\n5. PERCEIVED UTILITY SCORE [0-10]\n6. CATEGORIZATION\n7. ALERT SIGNALS\n8. INSTRUCTIVE SCORE [0-1]\n9. GLOBAL POLARITY [-1 to 1]"
+
     user_prompt = f"""
 ## CONTEXTE VIDÉO
-- Requête : "{query}"
+- Query : "{query}"
 - Titre : {title}
 - Chaîne : {channel}
 - Vues : {views} · Likes : {likes}
@@ -343,23 +355,15 @@ def node_analyst(state: AgentState) -> dict:
 ## COMMENTAIRES ({len(comments)} analysés, extrait)
 {comments_block}
 
-## TÂCHE (réponds section par section)
-1. SIMILARITÉ REQUÊTE/CONTENU [0-10]
-2. ANALYSE SENTIMENTALE (répartition % positifs/négatifs/neutres)
-3. VALIDATION PÉDAGOGIQUE (exemples)
-4. THÈMES RÉCURRENTS (top 3)
-5. SCORE D'UTILITÉ PERÇUE [0-10]
-6. CATÉGORISATION (type, audience)
-7. SIGNAUX D'ALERTE
-8. SCORE INSTRUCTIF [0-1]
-9. POLARITÉ GLOBALE [-1 à 1]
+## {task_prompt}
+{sections}
 """
     response, model_used = call_llm_with_fallback(user_prompt, system)
     try:
-        match_instr = re.search(r"(?:score instructif|instructif)[\s:]*([0-9]*\.?[0-9]+)", response, re.IGNORECASE)
+        match_instr = re.search(r"(?:score instructif|instructif|instructive score)[\s:]*([0-9]*\.?[0-9]+)", response, re.IGNORECASE)
         if match_instr:
             instructive_score = float(match_instr.group(1))
-        match_pol = re.search(r"(?:polarité|polarite)[\s:]*([-]?[0-9]*\.?[0-9]+)", response, re.IGNORECASE)
+        match_pol = re.search(r"(?:polarité|polarite|polarity)[\s:]*([-]?[0-9]*\.?[0-9]+)", response, re.IGNORECASE)
         if match_pol:
             polarity = float(match_pol.group(1))
             polarity = max(-1.0, min(1.0, polarity))
@@ -383,17 +387,24 @@ def node_synthesizer(state: AgentState) -> dict:
     nb_comments = len(state.get("filtered_comments", []))
     spam_count = state.get("spam_count", 0)
 
-    system = "Tu es un synthétiseur. Respecte le format exact."
+    lang = state.get("language", "fr")
+    if lang == "fr":
+        system = "Tu es un synthétiseur. Respecte le format exact. Réponds en français."
+        format_instr = "RÉSUMÉ: [3 phrases max]"
+    else:
+        system = "You are a synthesizer. Respect the exact format. Respond in English."
+        format_instr = "SUMMARY: [3 phrases max]"
+
     user_prompt = f"""
 ## DONNÉES
-- Requête : "{query}"
+- Query : "{query}"
 - Vidéo : {title}
 - Commentaires analysés : {nb_comments} (spam filtré : {spam_count})
 
 ## ANALYSE DÉTAILLÉE
 {full_analysis}
 
-## TÂCHE : SYNTHÈSE FINALE
+## TASK: FINAL SYNTHESIS
 Barème : 9-10 exceptionnel, 7-8 très bon, 5-6 moyen, 3-4 problèmes, 0-2 à éviter.
 Confiance : Haute (>50 comm. consensus clair), Moyenne (20-50 ou avis divisés), Faible (<20).
 
@@ -401,7 +412,7 @@ Réponds EXACTEMENT au format :
 SCORE: X.X/10
 CONFIANCE: haute|moyenne|faible
 RECOMMANDATION: À regarder|Selon vos intérêts|À éviter
-RÉSUMÉ: [3 phrases max]
+{format_instr}
 """
     response, model_used = call_llm_with_fallback(user_prompt, system)
     score = 0.0
@@ -414,11 +425,11 @@ RÉSUMÉ: [3 phrases max]
     m_conf = re.search(r"CONFIANCE\s*:\s*(haute|moyenne|faible)", response, re.IGNORECASE)
     if m_conf:
         confidence = m_conf.group(1).lower()
-    if "À regarder" in response:
+    if "À regarder" in response or "To watch" in response:
         recommendation = "À regarder"
-    elif "À éviter" in response:
+    elif "À éviter" in response or "To avoid" in response:
         recommendation = "À éviter"
-    m_sum = re.search(r"RÉSUMÉ\s*:\s*(.+)", response, re.IGNORECASE | re.DOTALL)
+    m_sum = re.search(r"(?:RÉSUMÉ|SUMMARY)\s*:\s*(.+)", response, re.IGNORECASE | re.DOTALL)
     if m_sum:
         summary = m_sum.group(1).strip()
     log = f"Synthesizer : score {score}/10, confiance {confidence}, recommandation {recommendation}"
