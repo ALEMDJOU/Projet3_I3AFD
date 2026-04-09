@@ -20,7 +20,7 @@ keys = get_api_keys()
 UI_STRINGS = {
     "fr": {
         "dashboard_title": "Tableau de Bord AVA PRO",
-        "dashboard_subtitle": "Analyse sémantique par swarm multi-agents · LangGraph + Gemini + HuggingFace Metrics",
+        "dashboard_subtitle": "Analyseur de vidéos YouTube basé sur les commentaires · Swarm multi-agents LangGraph",
         "analyze_title": "Analyser une vidéo",
         "url_placeholder": "URL ou ID YouTube",
         "btn_run": "🚀 LANCER L'ANALYSE",
@@ -36,6 +36,7 @@ UI_STRINGS = {
         "analyst_badge": "Expert Swarm",
         "tabs": ["Bruts", "Filtrés", "Analyse"],
         "step_names": {
+            "search": "Recherche",
             "fetch": "Fetcher",
             "filter": "Filter",
             "analyst": "Analyst",
@@ -43,11 +44,12 @@ UI_STRINGS = {
         },
         "team_title": "L'Équipe de Développement AVA PRO",
         
+        "welcome_message": "Bienvenue sur AVA Pro ! Votre outil d'analyse vidéo YouTube basé sur l'intelligence artificielle. Lancez une analyse pour découvrir les insights cachés dans les commentaires.",
     },
     
     "en": {
         "dashboard_title": "AVA PRO Dashboard",
-        "dashboard_subtitle": "Multi-agent swarm semantic analysis · LangGraph + Gemini + HuggingFace Metrics",
+        "dashboard_subtitle": "YouTube video analyzer based on comments · Multi-agent swarm semantic analysis",
         "analyze_title": "Analyze a Video",
         "url_placeholder": "YouTube URL or ID",
         "btn_run": "🚀 START ANALYSIS",
@@ -63,6 +65,7 @@ UI_STRINGS = {
         "analyst_badge": "Swarm Expert",
         "tabs": ["Raw", "Filtered", "Analysis"],
         "step_names": {
+            "search": "Search",
             "fetch": "Fetcher",
             "filter": "Filter",
             "analyst": "Analyst",
@@ -70,6 +73,7 @@ UI_STRINGS = {
         },
         "team_title": "AVA PRO Development Team",
         
+        "welcome_message": "Welcome to AVA Pro! Your AI-powered YouTube video analysis tool. Start an analysis to uncover hidden insights in comments.",
     }
 }
 
@@ -139,7 +143,7 @@ with st.sidebar:
       <path d="M73 107 L112 68"   stroke="#018EA9" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
     </svg>
     """
-    st.markdown(svg, unsafe_allow_html=True)
+    st.markdown(svg.replace("<svg", "<svg style='max-width: 100%; height: auto;'"), unsafe_allow_html=True) # Added style to SVG
 
 # ──────────────────────────────────────────────
 # En-tête principal
@@ -153,6 +157,7 @@ st.markdown(
     '</p></div>',
     unsafe_allow_html=True,
 )
+st.info(t["welcome_message"])
 
 # ──────────────────────────────────────────────
 # Saisie vidéo
@@ -203,6 +208,7 @@ if run_button:
             log_container = st.empty()
 
         steps_display = [
+            ("search",      t["step_names"]["search"],      "fa-magnifying-glass"),
             ("fetch",       t["step_names"]["fetch"],       "fa-download"),
             ("filter",      t["step_names"]["filter"],      "fa-filter"),
             ("analyst",     t["step_names"]["analyst"],     "fa-brain"),
@@ -210,7 +216,8 @@ if run_button:
         ]
         completed = []
 
-        with st.spinner("Activation du swarm…"):
+        loading_msg = "AVA Pro : Analyseur de vidéos YouTube basé sur les commentaires. Swarm multi-agents en action..." if lang == "fr" else "AVA Pro: YouTube video analyzer based on comments. Multi-agent swarm in action..."
+        with st.spinner(loading_msg):
             for i, output in enumerate(app_graph.stream({"video_id": video_id, "language": lang}, config)):
                 active_node = list(output.keys())[0]
                 completed.append(active_node)
@@ -219,7 +226,7 @@ if run_button:
                 logs  = state.get("reflection_logs", [])
 
                 # Logs
-                log_html = ("<div style='height:150px;overflow-y:auto;font-size:0.8rem;"
+                log_html = ("<div class='ava-log-container' style='height:150px;overflow-y:auto;font-size:0.8rem;" # Added class
                             "color:#334155;border:1px solid #E2E8F0;padding:10px;"
                             "border-radius:10px;background:#F8FAFF;'>")
                 for log in reversed(logs):
@@ -409,8 +416,26 @@ st.markdown("""
         }
     }
     @media (max-width: 480px) { /* Pour les téléphones mobiles */
+        [data-testid="stHorizontalBlock"] {
+            gap: 0px !important; /* Pas d'espace entre les images sur mobile */
+        }
         [data-testid="column"] img {
-            height: 150px !important; /* Réduire encore plus la hauteur */
+            height: 220px !important; /* Plus de hauteur pour un rendu "carte" sur mobile */
+        }
+    }
+
+    /* Responsive adjustments for specific elements in app.py */
+    @media (max-width: 768px) { /* Tablets and smaller */
+        .ava-log-container {
+            height: 100px !important;
+        }
+        .js-plotly-plot { /* Targets Plotly charts */
+            height: 180px !important;
+        }
+    }
+    @media (max-width: 480px) { /* Mobile phones */
+        .ava-log-container {
+            height: 150px !important;
         }
     }
 </style>
